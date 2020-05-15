@@ -1,26 +1,51 @@
 import { Router } from 'express';
+import multer from 'multer';
 
-// import TransactionsRepository from '../repositories/TransactionsRepository';
-// import CreateTransactionService from '../services/CreateTransactionService';
-// import DeleteTransactionService from '../services/DeleteTransactionService';
-// import ImportTransactionsService from '../services/ImportTransactionsService';
+import TransactionsRepository from '../repositories/TransactionsRepository';
+import CreateTransactionService from '../services/CreateTransactionService';
+import DeleteTransactionService from '../services/DeleteTransactionService';
+import ImportTransactionsService from '../services/ImportTransactionsService';
+import uploadConfig from '../config/upload';
 
 const transactionsRouter = Router();
+const upload = multer(uploadConfig);
+
+const createTransaction = new CreateTransactionService();
+const deleteTransaction = new DeleteTransactionService();
 
 transactionsRouter.get('/', async (request, response) => {
-  // TODO
+  const appointments = await createTransaction.list();
+  return response.json(appointments);
 });
 
 transactionsRouter.post('/', async (request, response) => {
-  // TODO
+  const { title, value, type, category } = request.body;
+
+  const transaction = await createTransaction.execute({
+    title,
+    value,
+    type,
+    category,
+  });
+
+  return response.json(transaction);
 });
 
 transactionsRouter.delete('/:id', async (request, response) => {
-  // TODO
+  const { id } = request.params;
+  const transactions = await deleteTransaction.execute(id);
+  return response.json(transactions);
 });
 
-transactionsRouter.post('/import', async (request, response) => {
-  // TODO
-});
+transactionsRouter.post(
+  '/import',
+  upload.single('file'),
+  async (request, response) => {
+    const importTransaction = new ImportTransactionsService();
+
+    const transaction = await importTransaction.execute(request.file.path);
+    return response.json({ transaction });
+  },
+);
 
 export default transactionsRouter;
